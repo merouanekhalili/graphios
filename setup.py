@@ -135,12 +135,12 @@ data_files = [
 ]
 scripts = ["graphios.py"]
 
-distro = distro.linux_distribution(full_distribution_name=False)[0]
-distro_ver = int(float(distro.linux_distribution(full_distribution_name=False)[1]))
+distro = distro.name()
+distro_ver = int(float(distro.version()))
 
 # print "using %s %s" % (distro, distro_ver)
 
-if distro in ['ubuntu', 'debian']:
+if distro in ['Ubuntu', 'debian']:
     data_files.append(('/etc/init/', ['init/debian/graphios.conf']))
     data_files.append(('/usr/local/bin/', ['graphios.py']))
     data_files.append(('/etc/init.d/', ['init/debian/graphios']))
