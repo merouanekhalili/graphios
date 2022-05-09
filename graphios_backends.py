@@ -1,13 +1,13 @@
 # vim: set ts=4 sw=4 tw=79 et :
 
 import socket
-import cPickle as pickle
+import pickle as pickle
 import struct
 import re
 import logging
 import sys
 import base64
-import urllib2
+import urllib.request, urllib.error, urllib.parse
 import json
 import os
 import ast
@@ -129,13 +129,13 @@ class librato(object):
         """
         body = json.dumps({'gauges': g})
         url = "%s/v1/metrics" % (self.api)
-        req = urllib2.Request(url, body, headers)
+        req = urllib.request.Request(url, body, headers)
 
         try:
-            f = urllib2.urlopen(req, timeout=self.flush_timeout_secs)
+            f = urllib.request.urlopen(req, timeout=self.flush_timeout_secs)
             # f.read()
             f.close()
-        except urllib2.HTTPError as error:
+        except urllib.error.HTTPError as error:
             self.metrics_sent = 0
             body = error.read()
             self.log.warning('Failed to send metrics to Librato: Code: \
@@ -171,7 +171,7 @@ class librato(object):
 
         metrics = []
         count = 0
-        for g in self.gauges.values():
+        for g in list(self.gauges.values()):
             metrics.append(g)
             count += 1
 
@@ -297,7 +297,7 @@ class carbon(object):
             else:
                 metric_item = (path, (timestamp, value))
             if self.test_mode:
-                print "%s %s %s" % (path, value, timestamp)
+                print("%s %s %s" % (path, value, timestamp))
             metric_list.append(metric_item)
         for metric_list_chunk in self.chunks(metric_list,
                                              self.carbon_max_metrics):
@@ -313,7 +313,7 @@ class carbon(object):
     def chunks(self, l, n):
         """ Yield successive n-sized chunks from l.
         """
-        for i in xrange(0, len(l), n):
+        for i in range(0, len(l), n):
             yield l[i:i + n]
 
     def build_path(self, m):
@@ -378,7 +378,7 @@ class carbon(object):
             try:
                 sock.connect((socket.gethostbyname(server), port))
                 self.log.debug("connected")
-            except Exception, ex:
+            except Exception as ex:
                 self.log.warning("Can't connect to carbon: %s:%s %s" % (
                                  server, port, ex))
 
@@ -386,7 +386,7 @@ class carbon(object):
             try:
                 for message in messages:
                     sock.sendall(message)
-            except Exception, ex:
+            except Exception as ex:
                 self.log.critical("Can't send message to carbon error:%s" % ex)
                 sock.close()
                 return 0
@@ -458,7 +458,7 @@ class statsd(object):
             for m in mlist:
                 try:
                     sock.sendto(m, (socket.gethostbyname(server), port))
-                except Exception, ex:
+                except Exception as ex:
                     self.log.critical("Can't send metric to statsd error:%s"
                                       % ex)
                 else:
@@ -550,12 +550,12 @@ class influxdb(object):
 
     def chunks(self, l, n):
         """ Yield successive n-sized chunks from l. """
-        for i in xrange(0, len(l), n):
+        for i in range(0, len(l), n):
             yield l[i:i+n]
 
     def url_request(self, url, chunk):
         json_body = json.dumps(chunk)
-        req = urllib2.Request(url, json_body)
+        req = urllib.request.Request(url, json_body)
         req.add_header('Content-Type', 'application/json')
         return req
 
@@ -564,10 +564,10 @@ class influxdb(object):
         req = self.url_request(self.build_url(server), chunk)
 
         try:
-            r = urllib2.urlopen(req, timeout=self.timeout)
+            r = urllib.request.urlopen(req, timeout=self.timeout)
             r.close()
             return True
-        except urllib2.HTTPError as e:
+        except urllib.error.HTTPError as e:
             body = e.read()
             self.log.warning('Failed to send metrics to InfluxDB. \
                                 Status code: %d: %s' % (e.code, body))
@@ -608,7 +608,7 @@ class influxdb(object):
 
             perfdata[path].append([timet_ms, value])
 
-        for k, v in perfdata.iteritems():
+        for k, v in perfdata.items():
             series.append({"name": k, "columns": ["time", "value"],
                            "points": v})
 
@@ -630,7 +630,7 @@ class influxdb09(influxdb):
         if 'influxdb_extra_tags' in cfg:
             self.influxdb_extra_tags = ast.literal_eval(
                 cfg['influxdb_extra_tags'])
-            print self.influxdb_extra_tags
+            print(self.influxdb_extra_tags)
         else:
             self.influxdb_extra_tags = {}
 
@@ -658,7 +658,7 @@ class influxdb09(influxdb):
 
     def url_request(self, url, chunk):
         if self.influxdb_line_protocol:
-            req = urllib2.Request(url, chunk)
+            req = urllib.request.Request(url, chunk)
             req.add_header('Content-Type', 'application/x-www-form-urlencoded')
             return req
         else:
@@ -673,7 +673,7 @@ class influxdb09(influxdb):
                     "fields": {"value": value}}
         return '%s,%s value=%s %d' % (
                 path,
-                ','.join(['%s=%s' % (k, v) for k, v in tags.iteritems() if v]),
+                ','.join(['%s=%s' % (k, v) for k, v in tags.items() if v]),
                 value,
                 timestamp * 10 ** 9
                 )
@@ -733,24 +733,24 @@ class stdout(object):
         ret = 0
         for metric in metrics:
             ret += 1
-            print("%s:%s" % ('LABEL', metric.LABEL))
-            print("%s:%s" % ('VALUE ', metric.VALUE))
-            print("%s:%s" % ('UOM ', metric.UOM))
-            print("%s:%s" % ('DATATYPE ', metric.DATATYPE))
-            print("%s:%s" % ('TIMET ', metric.TIMET))
-            print("%s:%s" % ('HOSTNAME ', metric.HOSTNAME))
-            print("%s:%s" % ('SERVICEDESC ', metric.SERVICEDESC))
-            print("%s:%s" % ('PERFDATA ', metric.PERFDATA))
-            print("%s:%s" % ('SERVICECHECKCOMMAND',
-                             metric.SERVICECHECKCOMMAND))
-            print("%s:%s" % ('HOSTCHECKCOMMAND ', metric.HOSTCHECKCOMMAND))
-            print("%s:%s" % ('HOSTSTATE ', metric.HOSTSTATE))
-            print("%s:%s" % ('HOSTSTATETYPE ', metric.HOSTSTATETYPE))
-            print("%s:%s" % ('SERVICESTATE ', metric.SERVICESTATE))
-            print("%s:%s" % ('SERVICESTATETYPE ', metric.SERVICESTATETYPE))
-            print("%s:%s" % ('METRICBASEPATH ', metric.METRICBASEPATH))
-            print("%s:%s" % ('GRAPHITEPREFIX ', metric.GRAPHITEPREFIX))
-            print("%s:%s" % ('GRAPHITEPOSTFIX ', metric.GRAPHITEPOSTFIX))
+            print(("%s:%s" % ('LABEL', metric.LABEL)))
+            print(("%s:%s" % ('VALUE ', metric.VALUE)))
+            print(("%s:%s" % ('UOM ', metric.UOM)))
+            print(("%s:%s" % ('DATATYPE ', metric.DATATYPE)))
+            print(("%s:%s" % ('TIMET ', metric.TIMET)))
+            print(("%s:%s" % ('HOSTNAME ', metric.HOSTNAME)))
+            print(("%s:%s" % ('SERVICEDESC ', metric.SERVICEDESC)))
+            print(("%s:%s" % ('PERFDATA ', metric.PERFDATA)))
+            print(("%s:%s" % ('SERVICECHECKCOMMAND',
+                             metric.SERVICECHECKCOMMAND)))
+            print(("%s:%s" % ('HOSTCHECKCOMMAND ', metric.HOSTCHECKCOMMAND)))
+            print(("%s:%s" % ('HOSTSTATE ', metric.HOSTSTATE)))
+            print(("%s:%s" % ('HOSTSTATETYPE ', metric.HOSTSTATETYPE)))
+            print(("%s:%s" % ('SERVICESTATE ', metric.SERVICESTATE)))
+            print(("%s:%s" % ('SERVICESTATETYPE ', metric.SERVICESTATETYPE)))
+            print(("%s:%s" % ('METRICBASEPATH ', metric.METRICBASEPATH)))
+            print(("%s:%s" % ('GRAPHITEPREFIX ', metric.GRAPHITEPREFIX)))
+            print(("%s:%s" % ('GRAPHITEPOSTFIX ', metric.GRAPHITEPOSTFIX)))
             print("-------")
 
         return ret

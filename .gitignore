@@ -3,6 +3,8 @@ Thumbs.db
 .DS_Store
 *.bak
 
+p2/
+
 # JetBrains PyCharm configuration and working files
 .idea
 

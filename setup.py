@@ -5,7 +5,7 @@ from shutil import Error as FileError
 from shutil import copy
 from time import strftime
 import os
-import platform
+import distro
 import re
 
 
@@ -49,7 +49,7 @@ def add_perfdata_config(nconfig, nag_cfg):
 
     # add the graphios commands
     cstat = os.stat(nag_cfg)
-    print("nagios uid: %s gid: %s" % (cstat.st_uid, cstat.st_gid))
+    print(("nagios uid: %s gid: %s" % (cstat.st_uid, cstat.st_gid)))
     if "cfg_dir" in nconfig:
         command_file = os.path.join(nconfig["cfg_dir"],
                                     'graphios_commands.cfg')
@@ -98,9 +98,9 @@ def _post_install():
         print("sorry I couldn't find the nagios.cfg file")
         print("NO POST INSTALL COULD BE PERFORMED")
     else:
-        print("found nagios.cfg in %s" % nag_cfg)
+        print(("found nagios.cfg in %s" % nag_cfg))
         nconfig = parse_nagios_cfg(nag_cfg)
-        print("parsed nagcfg, nagios_log is at %s" % nconfig['log_file'])
+        print(("parsed nagcfg, nagios_log is at %s" % nconfig['log_file']))
         if backup_file(nag_cfg):
             add_perfdata_config(nconfig, nag_cfg)
         else:
@@ -113,12 +113,12 @@ def backup_file(file_name):
     """
     my_time = strftime('%d-%m-%y')
     new_file_name = "%s.%s" % (file_name, my_time)
-    print("backing up file:%s to %s" % (file_name, new_file_name))
+    print(("backing up file:%s to %s" % (file_name, new_file_name)))
     try:
         copy(file_name, new_file_name)
         return True
     except (FileError, IOError, OSError) as e:
-        print("Error:%s copying:%s to:%s" % (e, file_name, new_file_name))
+        print(("Error:%s copying:%s to:%s" % (e, file_name, new_file_name)))
     return False
 
 
@@ -135,12 +135,12 @@ data_files = [
 ]
 scripts = ["graphios.py"]
 
-distro = platform.dist()[0]
-distro_ver = int(platform.dist()[1].split('.')[0])
+distro = distro.linux_distribution(full_distribution_name=False)[0]
+distro_ver = int(float(distro.linux_distribution(full_distribution_name=False)[1]))
 
 # print "using %s %s" % (distro, distro_ver)
 
-if distro in ['Ubuntu', 'debian']:
+if distro in ['ubuntu', 'debian']:
     data_files.append(('/etc/init/', ['init/debian/graphios.conf']))
     data_files.append(('/usr/local/bin/', ['graphios.py']))
     data_files.append(('/etc/init.d/', ['init/debian/graphios']))
@@ -168,7 +168,7 @@ setup(
     classifiers=[
         'Development Status :: 4 - Beta',
         'Intended Audience :: System Administrators',
-        'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3.8',
     ],
     keywords='Nagios metrics graphing visualization',
     long_description='Graphios is a script to send nagios perfdata to various\
