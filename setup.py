@@ -5,7 +5,7 @@ from shutil import Error as FileError
 from shutil import copy
 from time import strftime
 import os
-import distro
+import distro as pl
 import re
 
 
@@ -135,10 +135,10 @@ data_files = [
 ]
 scripts = ["graphios.py"]
 
-distro = distro.name()
-distro_ver = int(float(distro.version()))
+distro = pl.name()
+distro_ver = int(float(pl.version()))
 
-# print "using %s %s" % (distro, distro_ver)
+print("using %s %s" % (distro, distro_ver))
 
 if distro in ['Ubuntu', 'debian']:
     data_files.append(('/etc/init/', ['init/debian/graphios.conf']))
